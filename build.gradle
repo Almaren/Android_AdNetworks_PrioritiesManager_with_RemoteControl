@@ -1,0 +1,35 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+buildscript {
+    ext.kotlin_version = "1.6.10"
+    ext.kotlin_coroutines = "1.6.0"
+    ext.unityAdsMediation = "0.3.0"
+    ext.firebaseBom = '29.0.1' // 29.0.2 - has bug in DatabaseReference.setValue=returns task null
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        maven { url "https://plugins.gradle.org/m2/" }
+        google()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.2.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    version = '1.0.0'
+    repositories {
+        mavenLocal()
+        mavenCentral()
+        google()
+        gradlePluginPortal()
+        maven { url "https://aa-sdk.s3-eu-west-1.amazonaws.com/android_repo" }
+        maven { url 'https://unity3ddist.jfrog.io/artifactory/unity-mediation-mvn-prod-local/' }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
