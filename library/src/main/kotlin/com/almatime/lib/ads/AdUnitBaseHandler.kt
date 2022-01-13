@@ -45,8 +45,8 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
 
     private fun loadAdSource(adSourceIndex: Int) {
         val sortedAdSources = getSortedAdSources()
-        Log.i("ads", "LOAD adSourceIndex = $adSourceIndex = ${sortedAdSources[adSourceIndex]}")
         if (adSourceIndex > sortedAdSources.size - 1) return
+        Log.i("ads", "LOAD adSourceIndex = $adSourceIndex = ${sortedAdSources[adSourceIndex]}")
 
         adSources[sortedAdSources[adSourceIndex]]?.let {
             it.loadIfNotReady()

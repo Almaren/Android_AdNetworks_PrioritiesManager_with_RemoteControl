@@ -37,7 +37,7 @@ object AdSourcePriorityHandler {
     val spanishAndPortuguese = setOf("ES", "PT")
     val latamLanguages = setOf(AppLangCode.PT, AppLangCode.ES)
 
-    lateinit var latestLangCode: AppLangCode
+    private var latestLangCode: AppLangCode? = null
 
     /** <b>MUST BE CALLED FIRST BEFORE FIRST USE OF THIS SINGLETON!!!</b> */
     fun init(userDeviceData: UserDeviceData) {
@@ -104,7 +104,7 @@ object AdSourcePriorityHandler {
      * Call it on language changing!
      */
     fun updatePrioritiesRegardingToUserRegion(updateOnlyOnLocaleChange: Boolean, userDeviceData: UserDeviceData) {
-        if (updateOnlyOnLocaleChange && userDeviceData.appLangCode == latestLangCode) {
+        if (updateOnlyOnLocaleChange && latestLangCode?.let { userDeviceData.appLangCode == it } ?: false) {
             return
         }
         latestLangCode = userDeviceData.appLangCode
@@ -122,7 +122,6 @@ object AdSourcePriorityHandler {
             // rm adSourceForLatam
             adSourcesInterstitials = removeAdSource(adSourceForLatam, adSourcesInterstitials)
             adSourcesRewarded = removeAdSource(adSourceForLatam, adSourcesRewarded)
-            //setAdSourceAsHighestPriority(AdSource.UnityAds)
         }
         Log.i("ads", "updatePrioritiesRegardingToUserRegion updated INTERSTITIALS: $adSourcesInterstitials, " +
             " REWARDED: $adSourcesRewarded")
