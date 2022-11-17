@@ -23,7 +23,7 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
      * 2. Call [adSources[adSource].createAdUnit()].
      * 3. Initialize [adSourcesFailedCounter[adSource] = 0].
      */
-    abstract fun create(adSource: AdSource)
+    abstract fun create(adSource: AdSource, loadAd: Boolean = false)
 
     abstract fun getSortedAdSources(): List<AdSource>
 
@@ -45,7 +45,7 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
 
     private fun loadAdSource(adSourceIndex: Int) {
         val sortedAdSources = getSortedAdSources()
-        if (adSourceIndex > sortedAdSources.size - 1) return
+        if (adSourceIndex > sortedAdSources.size - 1 || adSourceIndex < 0) return
         Log.i("ads", "LOAD adSourceIndex = $adSourceIndex = ${sortedAdSources[adSourceIndex]}")
 
         adSources[sortedAdSources[adSourceIndex]]?.let {
@@ -85,9 +85,9 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
     private fun showAvailableAdSourceWithPriority(adSourceIndex: Int): Boolean {
         Log.i("ads", "showAvailableAdSourceWithPriority index = $adSourceIndex")
         val sortedAdSources = getSortedAdSources()
-        if (adSourceIndex > adSources.size - 1) return false
+        if (adSourceIndex > adSources.size - 1 || adSourceIndex < 0) return false
 
-        return adSources[sortedAdSources[adSourceIndex]]?.let { adSource ->
+        return adSources[sortedAdSources[adSourceIndex]]?.let { adSource -> // todo fix IndexOutOfBoundsException
             if (adSource.isLoaded()) {
                 adSource.show()
                 true
@@ -179,7 +179,7 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
     }
 
     override fun onError(adSource: AdSource) {
-        Log.w("ads", "onError currAdSource = $adSource")
+        Log.e("ads", "onError currAdSource = $adSource")
     }
 
     /** @return the boolean result if #action() processed. */

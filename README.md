@@ -34,7 +34,7 @@ Written in **Kotlin**. No UI sample. Android library.
   to the app build.gradle:
   ```
   dependencies {
-        implementation 'com.github.Almaren:Android_AdNetworks_PrioritiesManager_with_RemoteControl:1.0.1'
+        implementation 'com.github.Almaren:Android_AdNetworks_PrioritiesManager_with_RemoteControl:1.0.2'
   }
   ```
 * Add to your /android/../AndroidManifest.xml in your <activity> where the ads will be used:
@@ -52,6 +52,7 @@ Written in **Kotlin**. No UI sample. Android library.
 **All methods of AdManager must be called from the main ui thread.**
 1. Set app ID for each network in AdManager: APP_ID_YOUR_NET_AD.
    Set ad unit id for each network where marked "todo set your id".
+   Check local.properties. 
 2. Implement interface lib.ads.event.AdUserDeviceDataBinder, in my case implemented by MainActivity.
 3. First init: call AdManager.initAds() in your Activity.create(..). 
    In my case calling it after age gate and consent dialog. At the second app launching I call it in a main page with already stored age and consent state.  
@@ -74,7 +75,7 @@ If your firebase project is configured skip to step #4.
 
 4. Navigate in Firebase project to Remote config. Add parameter "adSourcesPriority" with the following value:
    ```
-   {"IronSrc":[-1,-1],"UnityAdsMediation":[2,2],"UnityAds":[1,-1]}
+   {"IronSrc":[-1,-1], "AdmobMediation":[3,3], "UnityAdsMediation":[2,2],"UnityAds":[1,-1]}
    ```
    where array values indicates: [interstitial, rewarded], 
    -1 = disabled, 1+ - priorities, the highest is more prioritized to display first.

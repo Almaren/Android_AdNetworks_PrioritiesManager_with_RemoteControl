@@ -24,7 +24,7 @@ class AdRewardedHandler(activity: Activity) : AdUnitBaseHandler(activity) {
 
     var onResult: ((ServiceResultState) -> Unit)? = null
 
-    override fun create(adSource: AdSource) {
+    override fun create(adSource: AdSource, loadAd: Boolean) {
         Log.i("ads", "AdRewardedHandler create: $adSource")
         when (adSource) {
             AdSource.UnityAds -> {
@@ -33,8 +33,19 @@ class AdRewardedHandler(activity: Activity) : AdUnitBaseHandler(activity) {
                     AdSource.UnityAds
                 ).apply {
                     createAdUnit()
+                    if (loadAd) load()
                 }
                 adSourcesFailedCounter[AdSource.UnityAds] = 0
+            }
+            AdSource.AdmobMediation -> {
+                adSources[AdSource.AdmobMediation] = AdmobRewarded(
+                    this,
+                    AdSource.AdmobMediation
+                ).apply {
+                    createAdUnit()
+                    if (loadAd) load()
+                }
+                adSourcesFailedCounter[AdSource.AdmobMediation] = 0
             }
             AdSource.UnityAdsMediation -> {
                 adSources[AdSource.UnityAdsMediation] = UnityMediationRewarded(
@@ -42,6 +53,7 @@ class AdRewardedHandler(activity: Activity) : AdUnitBaseHandler(activity) {
                     AdSource.UnityAdsMediation
                 ).apply {
                     createAdUnit()
+                    if (loadAd) load()
                 }
                 adSourcesFailedCounter[AdSource.UnityAdsMediation] = 0
             }

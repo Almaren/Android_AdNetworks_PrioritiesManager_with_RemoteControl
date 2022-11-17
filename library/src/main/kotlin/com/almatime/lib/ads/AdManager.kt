@@ -7,7 +7,8 @@ import com.almatime.lib.ads.event.AdUserDeviceDataBinder
 import com.almatime.lib.ads.interstitial.AdInterstitialHandler
 import com.almatime.lib.ads.rewarded.AdRewardedHandler
 import com.almatime.util.Log
-import com.unity3d.ads.IUnityAdsInitializationListener
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.initialization.AdapterStatus
 import com.unity3d.ads.UnityAds
 import com.unity3d.mediation.IInitializationListener
 import com.unity3d.mediation.InitializationConfiguration
@@ -18,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.logging.Level
 import kotlin.collections.ArrayList
+import com.unity3d.ads.IUnityAdsInitializationListener as IUnityAdsInitializationListener
 
 /**
  * SDKs initialization firstly done whenever entering to MainMenuScene, secondly whenever receiving
@@ -46,19 +48,23 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
     /**
      * Should be initialized after Consent Scene.
      */
-    fun initAds() {
+    fun initAds(loadAdTypes: Set<AdType>? = null) {
         Log.i("ads", "initAds initAds thread = " + Thread.currentThread().name)
 
         AdSourcePriorityHandler.init((activity as AdUserDeviceDataBinder).getUserDeviceData())
         AdSourcePriorityHandler.updatePrioritiesAccordingToMinApi()
         setPrivacyMetaData() // init ad networks metadata
-        initAdSources()
+        if (isCreateAdSources()) {
+            initAdSources(loadAdTypes)
+        }
     }
 
     /**
      * Called twice. Once from Core. Second from RemoteConfigManager on receiving remote data.
+     * IronSrc listeners should be initialized before the sdk init.
+     * Kidoz must be initialized after sdk.
      */
-    @Synchronized fun initAdSources() {
+    @Synchronized fun initAdSources(loadAdTypes: Set<AdType>? = null) {
         if (Log.DEBUG) {
             Log.i("ads", "initAdSources Curr Thread = " + Thread.currentThread().name
                     + ", sdksInitialized = " + sdksInitialized.toString())
@@ -66,28 +72,59 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
 
         if (!Thread.currentThread().name.contains("main")) {
             activity.runOnUiThread {
-                createAdSources()
+                createAdSources(loadAdTypes)
             }
         } else {
             // already running in main thread
-            createAdSources()
+            createAdSources(loadAdTypes)
         }
     }
 
-    /**
-     * IronSource listeners should be initialized before the sdk init.
-     */
-    @Synchronized private fun createAdSources() {
+    @Synchronized private fun createAdSources(loadAdTypes: Set<AdType>? = null) {
         Log.i("ads", "createAdSources started sdksInitialized = $sdksInitialized, thread=${Thread.currentThread().id}")
+        // -------------------------------- Admob -------------------------------------
+        if (isInitSdk(AdSource.AdmobMediation)) {
+            Log.i("ads","init Admob")
+            // After 10 seconds, the Google Mobile Ads SDK invokes the OnInitializationCompleteListener
+            // even if a mediation network still hasn't completed initialization.
+            MobileAds.initialize(activity) { status ->
+                Log.i("ads", "init status = $status, map=${status?.adapterStatusMap}")
+                status?.let {
+                    it.adapterStatusMap?.let { map ->
+                        for ((str, status) in map) {
+                            Log.i("ads", "$str: status = ${status?.initializationState}")
+
+                            if (str.contains("MobileAds", true)) {
+                                if (status.initializationState == AdapterStatus.State.READY) {
+                                    Log.i("ads", "AdMob SDK READY! init ad units")
+                                    initAdUnit(AdSource.AdmobMediation, AdType.INTERSTITIAL,
+                                        loadAdTypes?.contains(AdType.INTERSTITIAL) ?: false)
+                                    initAdUnit(AdSource.AdmobMediation, AdType.REWARDED,
+                                        loadAdTypes?.contains(AdType.REWARDED) ?: false)
+                                    setInitSdkState(AdSource.AdmobMediation, true)
+                                } else if (status.initializationState == AdapterStatus.State.NOT_READY) {
+                                    Log.w("ads", "failed to init SDK! NOT READY")
+                                    setInitSdkState(AdSource.AdmobMediation, false)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // --------------------------------- Unity Standalone --------------------------------------
         if (isInitSdk(AdSource.UnityAds)) {
             // todo disable test mode
             UnityAds.initialize(activity.applicationContext, APP_ID_UNITY_ADS,
-                    true, true, object : IUnityAdsInitializationListener {
+                    false, object : IUnityAdsInitializationListener {
+
                 override fun onInitializationComplete() {
                     Log.i("ads", "UnityAds is successfully initialized.")
-                    initAdUnit(AdSource.UnityAds, AdType.INTERSTITIAL)
-                    initAdUnit(AdSource.UnityAds, AdType.REWARDED)
+                    initAdUnit(AdSource.UnityAds, AdType.INTERSTITIAL,
+                        loadAdTypes?.contains(AdType.INTERSTITIAL) ?: false)
+                    initAdUnit(AdSource.UnityAds, AdType.REWARDED,
+                        loadAdTypes?.contains(AdType.REWARDED) ?: false)
                     setInitSdkState(AdSource.UnityAds, true)
                 }
 
@@ -95,8 +132,9 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
                     Log.w("ads", "UnityAds Failed to Initialize : $msg")
                     setInitSdkState(AdSource.UnityAds, false)
                 }
+
             })
-            UnityAds.setDebugMode(true) // todo disable test mode
+            UnityAds.setDebugMode(false) // todo disable test mode
         }
 
         // --------------------------------- UnityMediation ----------------------------------------
@@ -108,8 +146,10 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
                         override fun onInitializationComplete() {
                             // Unity Mediation is initialized. Try loading an ad.
                             Log.i("ads", "UnityMediation is successfully initialized.")
-                            initAdUnit(AdSource.UnityAdsMediation, AdType.INTERSTITIAL)
-                            initAdUnit(AdSource.UnityAdsMediation, AdType.REWARDED)
+                            initAdUnit(AdSource.UnityAdsMediation, AdType.INTERSTITIAL,
+                                loadAdTypes?.contains(AdType.INTERSTITIAL) ?: false)
+                            initAdUnit(AdSource.UnityAdsMediation, AdType.REWARDED,
+                                loadAdTypes?.contains(AdType.REWARDED) ?: false)
                             setInitSdkState(AdSource.UnityAdsMediation, true)
                         }
 
@@ -124,7 +164,32 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
             UnityAds.setDebugMode(true) // todo disable test mode
         }
 
+        // ---------------------------------- SuperAwesome -----------------------------------------
+        /*if (isInitSdk(AdSource.Awesome)) {
+            try {
+                AwesomeAds.init(activity, false) // todo disable logging second param
+                initAdUnit(AdSource.Awesome, AdType.INTERSTITIAL)
+                initAdUnit(AdSource.Awesome, AdType.REWARDED)
+                setInitSdkState(AdSource.Awesome, true)
+            } catch (e: Exception) {
+                Log.e(e)
+                setInitSdkState(AdSource.Awesome, false)
+            }
+        }*/
         Log.i("ads", "createAdSources finished sdksInitialized = $sdksInitialized, thread=${Thread.currentThread().id}")
+    }
+
+    @Synchronized private fun isCreateAdSources(): Boolean {
+        if (Log.DEBUG) {
+            Log.i("ads", "isCreateAdSources: sdksInitialized.size = " + sdksInitialized.size
+                    + ", getActiveSourcesCount = " + AdSourcePriorityHandler.getActiveSourcesCount())
+        }
+
+        if (AdSourcePriorityHandler.isAdSourcesEmpty() ||
+            (sdksInitialized.size == AdSourcePriorityHandler.getActiveSourcesCount())) {
+            return false
+        }
+        return true
     }
 
     /** Thread safe. */
@@ -155,12 +220,23 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
     }
 
     /** Thread safe. For a public lib AdType from lib.ads.data should be used. */
-    @Synchronized private fun initAdUnit(adSource: AdSource, type: AdType) {
+    @Synchronized private fun initAdUnit(adSource: AdSource, type: AdType, isLoadAd: Boolean) {
         if (AdSourcePriorityHandler.isInitAdSource(adSource, type)) {
             when (type) {
-                AdType.INTERSTITIAL -> adInterstitial.create(adSource)
-                AdType.REWARDED -> adRewarded.create(adSource)
+                AdType.INTERSTITIAL -> adInterstitial.create(adSource, isLoadAd)
+                AdType.REWARDED -> adRewarded.create(adSource, isLoadAd)
                 else -> {}
+            }
+        }
+    }
+
+    // for test purposes only
+    private fun checkAdmobMediationStatus() {
+        MobileAds.getInitializationStatus()?.let {
+            it.adapterStatusMap?.let { map ->
+                for ((str, status) in map) {
+                    Log.i("ads", "$str: status = ${status?.initializationState}")
+                }
             }
         }
     }
@@ -240,6 +316,10 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
                 || Settings.GetInstance().consentStatus == Settings.ConsentStatus.UNKNOWN
         val dataPrivacyLaws = hashSetOf<DataPrivacyApplyLaw>()
 
+        if (age < 13) {
+            dataPrivacyLaws.add(DataPrivacyApplyLaw.COPPA)
+        }
+
         // detect consent given for GDPR or CCPA or LGPD
         // currently can't determine California State location
         if (Settings.GetInstance().isUserFromUSA && (age < 13 || (isConsentNotRequired ||
@@ -254,12 +334,20 @@ class AdManager(val activity: Activity, val layoutContainer: RelativeLayout) {
         val age = 0
         val dataPrivacyLaws = hashSetOf<DataPrivacyApplyLaw>()
         val consentState = ConsentState.NOT_REQUIRED
+        val isUnderTheAgeOfConsent = false
 
         return ConsentUserData(
             age,
+            isUnderTheAgeOfConsent,
             dataPrivacyLaws,
             consentState
         )
+    }
+
+    private fun runMobileAdsInspectorDebug() {
+        MobileAds.openAdInspector(activity) {
+            // Error will be non-null if ad inspector closed due to an error.
+        }
     }
 
 }

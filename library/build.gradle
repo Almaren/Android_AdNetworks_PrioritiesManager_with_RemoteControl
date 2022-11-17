@@ -3,9 +3,16 @@ plugins {
     id 'kotlin-android'
 }
 
+def localProps = new Properties()
+try {
+    localProps.load(new FileInputStream(rootProject.file("local.properties")))
+} catch (Exception e) {
+    logger.log(LogLevel.ERROR, "No Local Properties File Found!")
+}
+
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+    compileSdkVersion 33
+    buildToolsVersion "33.0.0"
 
     sourceSets {
         main {
@@ -19,10 +26,11 @@ android {
     }
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 30
-        versionCode 1
-        versionName "1.0.0"
+        targetSdkVersion 33
+        versionCode 3
+        versionName "1.0.2"
         multiDexEnabled true
+        manifestPlaceholders.admobId = localProps['admobId']
     }
     buildTypes {
         release {
@@ -59,6 +67,12 @@ dependencies {
 
     // ------ Unity Ads as standalone (already included in UnityMediation): --------
     //implementation 'com.unity3d.ads:unity-ads:4.0.0' // 3.5.1+ - requires minSdkVersion = 19
+    // 4.1.0 already includes com.google.android.gms.permission.AD_ID
+    implementation "com.unity3d.ads:unity-ads:$unityAds" // 3.5.1+ - requires minSdkVersion = 19, was = 4.0.0*/
+
+    implementation "com.google.android.gms:play-services-ads:$googleAds"
+    implementation "com.google.ads.mediation:unity:$unityAdsAdaperForAdmob"
+    implementation "com.google.code.gson:gson:2.10" // used in my ads manager
 
     // ---------------------------------- Unity Ads Mediation --------------------------------------
     implementation "com.unity3d.mediation:mediation-sdk:$unityAdsMediation" // last standalone unity ads 4.0.0

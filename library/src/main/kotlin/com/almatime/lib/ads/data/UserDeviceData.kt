@@ -7,15 +7,13 @@ package com.almatime.lib.ads.data
  */
 enum class AppLangCode {
     EN,
-    RU,
-    FA,
-    AR,
-    ES,
     PT,
+    ES,
+    UK,
     DE,
     FR,
     IT,
-    HE
+    AR
 }
 
 enum class Gender {
@@ -26,7 +24,7 @@ data class UserDeviceData(
     val age: Int,
     val gender: Gender,
     val appLangCode: AppLangCode,
-    val localeCountryIso2: String,
+    val localeCountryIso2: String?,
     val isDeviceTablet: Boolean
 ) {
     override fun toString() = "{ age: $age, appLangCode: $appLangCode, " +

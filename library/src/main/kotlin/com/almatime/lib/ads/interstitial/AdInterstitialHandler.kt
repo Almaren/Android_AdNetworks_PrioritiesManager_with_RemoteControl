@@ -21,7 +21,7 @@ class AdInterstitialHandler(activity: Activity) : AdUnitBaseHandler(activity) {
     override fun getIndexOfNextAdSource(currAdSource: AdSource) =
             AdSourcePriorityHandler.getIndexOfNextAvailableAdSourceInterstitial(currAdSource)
 
-    override fun create(adSource: AdSource) {
+    override fun create(adSource: AdSource, loadAd: Boolean) {
         Log.i("ads", "AdInterstitialHandler create: $adSource")
         when (adSource) {
             AdSource.UnityAds -> {
@@ -31,8 +31,20 @@ class AdInterstitialHandler(activity: Activity) : AdUnitBaseHandler(activity) {
                     setOf(InterstitialAdType.All)
                 ).apply {
                     createAdUnit()
+                    if (loadAd) load()
                 }
                 adSourcesFailedCounter[AdSource.UnityAds] = 0
+            }
+            AdSource.AdmobMediation -> {
+                adSources[AdSource.AdmobMediation] = AdmobInterstitial(
+                    this,
+                    AdSource.AdmobMediation,
+                    setOf(InterstitialAdType.All)
+                ).apply {
+                    createAdUnit()
+                    if (loadAd) load()
+                }
+                adSourcesFailedCounter[AdSource.AdmobMediation] = 0
             }
             AdSource.UnityAdsMediation -> {
                 adSources[AdSource.UnityAdsMediation] = UnityMediationInterstitial(
@@ -41,9 +53,11 @@ class AdInterstitialHandler(activity: Activity) : AdUnitBaseHandler(activity) {
                     setOf(InterstitialAdType.All)
                 ).apply {
                     createAdUnit()
+                    if (loadAd) load()
                 }
                 adSourcesFailedCounter[AdSource.UnityAdsMediation] = 0
             }
+            else -> {}
         }
     }
 

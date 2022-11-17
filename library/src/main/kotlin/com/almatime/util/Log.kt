@@ -106,6 +106,10 @@ object Log {
         }
     }
 
+    inline fun e(tag: String = TAG, msg: String, cause: Throwable? = null) {
+        if (DEBUG) android.util.Log.e(TAG, msg, cause)
+    }
+
     inline fun e(cause: Throwable) {
         if (DEBUG) android.util.Log.e(TAG, "", cause)
     }

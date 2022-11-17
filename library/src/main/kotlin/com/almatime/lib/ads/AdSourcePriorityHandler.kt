@@ -7,6 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.lang.Exception
 import java.lang.IllegalArgumentException
+import kotlin.math.max
 
 /**
  * Handles the priority of displaying an ad source for each ad unit type. The first is a highest in a list.
@@ -29,7 +30,7 @@ object AdSourcePriorityHandler {
     lateinit var adSourcesInterstitialsOrigServer: List<AdSource>
     lateinit var adSourcesRewardedOrigServer: List<AdSource>
 
-    private val adSourceForLatam = AdSource.Kidoz // todo define
+    private val adSourceForLatam = AdSource.AdmobMediation
 
     val latam = setOf("AR", "BO", "BR", "CL", "CO", "EC", "FK", "GF", "GY", "PY", "PE", "SR", "UY", "VE")
     val northAndCentralAmerica = setOf("MX", "GG", "HN", "SV", "BZ", "NI", "CR", "PA")
@@ -43,11 +44,11 @@ object AdSourcePriorityHandler {
     fun init(userDeviceData: UserDeviceData) {
         Log.i("ads", "AdSourcePriority.init: data = ${userDeviceData}")
         if (isUserFromLatamRegion(userDeviceData)) {
-            adSourcesInterstitials = listOf(adSourceForLatam, AdSource.UnityAds, AdSource.UnityAdsMediation)
-            adSourcesRewarded = listOf(adSourceForLatam, AdSource.UnityAds, AdSource.UnityAdsMediation)
+            adSourcesInterstitials = listOf(adSourceForLatam)
+            adSourcesRewarded = listOf(adSourceForLatam)
         } else {
-            adSourcesInterstitials = listOf(AdSource.UnityAds, AdSource.UnityAdsMediation)
-            adSourcesRewarded = listOf(AdSource.UnityAds, AdSource.UnityAdsMediation)
+            adSourcesInterstitials = listOf(AdSource.AdmobMediation, AdSource.UnityAds)
+            adSourcesRewarded = listOf(AdSource.AdmobMediation, AdSource.UnityAds)
         }
     }
 
@@ -186,6 +187,10 @@ object AdSourcePriorityHandler {
         false
     }
 
+    fun isAdSourcesEmpty() = adSourcesInterstitials.isEmpty() && adSourcesRewarded.isEmpty()
+
+    fun getActiveSourcesCount() = max(adSourcesInterstitials.size, adSourcesRewarded.size)
+
     fun getIndexOfAdSourceInterstitial(adSource: AdSource) = adSourcesInterstitials.indexOfFirst { it == adSource }
 
     fun getIndexOfAdSourceRewarded(adSource: AdSource) = adSourcesRewarded.indexOfFirst { it == adSource }
@@ -246,4 +251,3 @@ object AdSourcePriorityHandler {
     }
 
 }
-

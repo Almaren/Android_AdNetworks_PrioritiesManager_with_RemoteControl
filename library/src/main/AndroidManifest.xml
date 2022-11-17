@@ -29,8 +29,16 @@
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
         <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobId}" />
+        <meta-data
             android:name="com.google.android.gms.ads.AD_MANAGER_APP"
             android:value="true" />
+
+        <!-- Don't send AdMob stats until init. Delay app measurement until MobileAds.initialize() is called. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true"/>
 
         <activity
             android:name="com.unity3d.services.ads.adunit.AdUnitActivity"
