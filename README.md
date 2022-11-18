@@ -8,7 +8,7 @@
   * *My library not a mediation. Without control of mediated ads price.*
 
 Implemented ad types: interstitials, rewarded.
-Ad networks: UnityAds (mediated or standalone), UnityMediation, SuperAwesome, Kidoz, IronSource.
+**Ad networks: Admob, UnityAds (mediated or standalone), Admob Mediation, Unity Mediation, SuperAwesome, Kidoz, IronSource.**
 Written in **Kotlin**. No UI sample. Android library.
 
 **My library will organize your common use cases for each ad network implementation that you will add.**

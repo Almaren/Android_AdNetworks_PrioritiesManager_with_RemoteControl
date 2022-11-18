@@ -87,7 +87,7 @@ abstract class AdUnitBaseHandler(val activity: Activity) : OnAdStateChange {
         val sortedAdSources = getSortedAdSources()
         if (adSourceIndex > adSources.size - 1 || adSourceIndex < 0) return false
 
-        return adSources[sortedAdSources[adSourceIndex]]?.let { adSource -> // todo fix IndexOutOfBoundsException
+        return adSources[sortedAdSources[adSourceIndex]]?.let { adSource ->
             if (adSource.isLoaded()) {
                 adSource.show()
                 true
